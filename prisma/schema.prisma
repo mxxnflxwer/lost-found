@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      String   @default("USER")
+  items     Item[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Item {
+  id           String   @id @default(uuid())
+  type         String
+  name         String
+  category     String
+  description  String
+  location     String
+  date         DateTime
+  imageUrl     String?
+  contactEmail String
+  status       String   @default("PENDING")
+  
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  
+  matchesAsLost  Match[] @relation("LostItem")
+  matchesAsFound Match[] @relation("FoundItem")
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Match {
+  id          String   @id @default(uuid())
+  lostItemId  String
+  foundItemId String
+  score       Int
+  status      String   @default("PENDING")
+
+  lostItem    Item     @relation("LostItem", fields: [lostItemId], references: [id])
+  foundItem   Item     @relation("FoundItem", fields: [foundItemId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
