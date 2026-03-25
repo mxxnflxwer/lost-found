@@ -36,7 +36,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12">
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-24 sm:py-32">
       <div className="w-full max-w-[400px] animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="mb-8 text-center">
           <div className="flex justify-center mb-4">

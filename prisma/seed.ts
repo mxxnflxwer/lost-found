@@ -20,11 +20,10 @@ async function main() {
 
   // Sample items
   await prisma.item.createMany({
-    skipDuplicates: true,
     data: [
-      { type: "LOST", name: "Blue Backpack", category: "Bags / Backpacks", description: "Navy blue Nike backpack with a laptop compartment", location: "Central Library", date: new Date("2026-03-20"), contactEmail: "demo@lostfound.app", userId: demo.id },
-      { type: "FOUND", name: "Nike Backpack", category: "Bags / Backpacks", description: "Found a dark blue Nike backpack near the library entrance", location: "Central Library entrance", date: new Date("2026-03-21"), contactEmail: "finder@example.com", userId: demo.id },
-      { type: "LOST", name: "AirPods Pro", category: "Electronics", description: "White AirPods Pro with charging case, lightning port", location: "Cafeteria", date: new Date("2026-03-22"), contactEmail: "demo@lostfound.app", userId: demo.id },
+      { type: "LOST", name: "Blue Backpack", category: "Bags / Backpacks", description: "Navy blue Nike backpack with a laptop compartment", location: "Central Library", date: new Date("2026-03-20"), contactEmail: "demo@lostfound.app", userId: demo.id, phone: "1234567890" },
+      { type: "FOUND", name: "Nike Backpack", category: "Bags / Backpacks", description: "Found a dark blue Nike backpack near the library entrance", location: "Central Library entrance", date: new Date("2026-03-21"), contactEmail: "finder@example.com", userId: demo.id, phone: "0987654321" },
+      { type: "LOST", name: "AirPods Pro", category: "Electronics", description: "White AirPods Pro with charging case, lightning port", location: "Cafeteria", date: new Date("2026-03-22"), contactEmail: "demo@lostfound.app", userId: demo.id, phone: "5551234444" },
     ],
   });
 

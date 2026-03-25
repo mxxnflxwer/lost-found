@@ -20,6 +20,7 @@ function StatusBadge({ status }: { status: string }) {
   const base = "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium";
   if (status === "PENDING") return <span className={`${base} bg-zinc-100 text-zinc-600`}><Clock className="h-3 w-3 mr-1" />Pending</span>;
   if (status === "MATCHED") return <span className={`${base} bg-zinc-200 text-zinc-700`}><AlertCircle className="h-3 w-3 mr-1" />Matched</span>;
+  if (status === "CLAIMED") return <span className={`${base} bg-zinc-300 text-zinc-800`}><AlertCircle className="h-3 w-3 mr-1" />Claimed</span>;
   if (status === "RESOLVED") return <span className={`${base} bg-zinc-800 text-white`}><CheckCircle2 className="h-3 w-3 mr-1" />Resolved</span>;
   return <span className={base}>{status}</span>;
 }
@@ -32,13 +33,40 @@ export default function DashboardPage() {
   const [statusFilter, setStatusFilter] = useState<"ALL" | "PENDING" | "MATCHED" | "RESOLVED">("ALL");
   const [user, setUser] = useState<{ name?: string; email: string } | null>(null);
 
+  const [notifications, setNotifications] = useState<{id:string;title:string;message:string;isRead:boolean;createdAt:string}[]>([]);
+
   useEffect(() => {
-    fetch("/api/auth/me").then(r => r.json()).then(d => {
-      if (!d.user) { router.push("/login"); return; }
-      setUser(d.user);
-    });
-    fetch("/api/items?mine=1").then(r => r.json()).then(d => { setItems(Array.isArray(d) ? d : []); setLoading(false); });
+    fetch("/api/auth/me")
+      .then(r => r.ok ? r.json() : { user: null })
+      .then(d => {
+        if (!d.user) { router.push("/login"); return; }
+        setUser(d.user);
+      })
+      .catch(() => router.push("/login"));
+
+    fetch("/api/items?mine=1")
+      .then(r => r.ok ? r.json() : [])
+      .then(d => { setItems(Array.isArray(d) ? d : []); setLoading(false); })
+      .catch(() => setLoading(false));
+
+    fetch("/api/notifications")
+      .then(r => r.ok ? r.json() : [])
+      .then(d => { setNotifications(Array.isArray(d) ? d : []); })
+      .catch(() => {});
   }, [router]);
+
+  async function markRead(id: string) {
+    await fetch("/api/notifications", { method: "PATCH", body: JSON.stringify({ id }) });
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+  }
+
+  async function initiateClaim(itemId: string) {
+    if (!confirm("Confirm that you want to initiate a claim for this item? Admin will verify your ownership.")) return;
+    const res = await fetch("/api/items", { method: "PATCH", body: JSON.stringify({ id: itemId, status: "CLAIMED" }) });
+    if (res.ok) {
+      setItems(prev => prev.map(i => i.id === itemId ? { ...i, status: "CLAIMED" } : i));
+    }
+  }
 
   const filtered = items.filter(i =>
     (filter === "ALL" || i.type === filter) &&
@@ -46,7 +74,7 @@ export default function DashboardPage() {
   );
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] py-10 px-4">
+    <div className="min-h-[calc(100vh-4rem)] py-20 px-4 md:py-32">
       <div className="mx-auto max-w-5xl">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
@@ -62,6 +90,26 @@ export default function DashboardPage() {
             </Link>
           </div>
         </div>
+
+        {/* Notifications */}
+        {notifications.length > 0 && notifications.some(n => !n.isRead) && (
+          <div className="mb-8 space-y-2">
+            <h2 className="text-sm font-semibold text-muted uppercase tracking-wider px-1">Alerts</h2>
+            {notifications.filter(n => !n.isRead).map(n => (
+              <div key={n.id} className="group relative flex items-start gap-3 p-4 rounded-2xl bg-zinc-50 border border-zinc-100 transition hover:bg-zinc-100">
+                <div className="h-2 w-2 rounded-full bg-zinc-800 mt-1.5 shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-primary">{n.title}</p>
+                  <p className="text-sm text-muted mt-0.5">{n.message}</p>
+                  <p className="text-xs text-zinc-400 mt-2">{new Date(n.createdAt).toLocaleString()}</p>
+                </div>
+                <button onClick={() => markRead(n.id)} className="text-xs font-medium text-muted hover:text-primary transition opacity-0 group-hover:opacity-100">
+                  Mark as read
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Filters */}
         <div className="flex flex-wrap gap-2 mb-6">
@@ -108,7 +156,16 @@ export default function DashboardPage() {
                     <td className="px-5 py-4 text-muted hidden sm:table-cell">{item.type}</td>
                     <td className="px-5 py-4 text-muted hidden md:table-cell">{item.category}</td>
                     <td className="px-5 py-4 text-muted hidden md:table-cell">{new Date(item.date).toLocaleDateString()}</td>
-                    <td className="px-5 py-4"><StatusBadge status={item.status} /></td>
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-2">
+                        <StatusBadge status={item.status} />
+                        {item.status === "MATCHED" && (
+                          <button onClick={() => initiateClaim(item.id)} className="px-2 py-1 rounded-md bg-zinc-800 text-white text-[10px] uppercase font-bold hover:bg-zinc-700 transition">
+                            Initiate Claim
+                          </button>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>

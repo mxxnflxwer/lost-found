@@ -29,29 +29,31 @@ function dateDiffDays(d1: Date | string, d2: Date | string): number {
 }
 
 export function computeMatchScore(lostItem: Item, foundItem: Item): number {
-  // Category must match strictly
+  // Category -> 40%
+  // We keep it as a strict filter but it provides 40 points if it matches
   if (lostItem.category.toLowerCase() !== foundItem.category.toLowerCase()) {
     return 0;
   }
+  let score = 40;
 
-  // Description similarity (Jaccard) — 40 pts
-  const lostTokens = tokenize(lostItem.description + " " + lostItem.name);
-  const foundTokens = tokenize(foundItem.description + " " + foundItem.name);
-  const descSimilarity = jaccardSimilarity(lostTokens, foundTokens);
-  const descScore = Math.round(descSimilarity * 40);
-
-  // Location similarity — 35 pts
+  // Location similarity — 25 pts
   const lostLocTokens = tokenize(lostItem.location);
   const foundLocTokens = tokenize(foundItem.location);
   const locSimilarity = jaccardSimilarity(lostLocTokens, foundLocTokens);
-  const locScore = Math.round(locSimilarity * 35);
+  score += Math.round(locSimilarity * 25);
 
-  // Date proximity — 25 pts (within 30 days = max)
+  // Date proximity — 15 pts (within 30 days = max)
   const daysDiff = dateDiffDays(lostItem.date, foundItem.date);
   const dateFactor = Math.max(0, 1 - daysDiff / 30);
-  const dateScore = Math.round(dateFactor * 25);
+  score += Math.round(dateFactor * 15);
 
-  return descScore + locScore + dateScore;
+  // Description similarity (Jaccard) — 20 pts
+  const lostTokens = tokenize(lostItem.description + " " + lostItem.name);
+  const foundTokens = tokenize(foundItem.description + " " + foundItem.name);
+  const descSimilarity = jaccardSimilarity(lostTokens, foundTokens);
+  score += Math.round(descSimilarity * 20);
+
+  return score;
 }
 
-export const MATCH_THRESHOLD = 30;
+export const MATCH_THRESHOLD = 50; // Higher threshold now that category is 40

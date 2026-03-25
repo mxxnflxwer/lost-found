@@ -13,9 +13,10 @@ model User {
   password  String
   name      String?
   role      String   @default("USER")
-  items     Item[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  items         Item[]
+  notifications Notification[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model Item {
@@ -28,6 +29,7 @@ model Item {
   date         DateTime
   imageUrl     String?
   contactEmail String
+  phone        String   // Added phone field
   status       String   @default("PENDING")
   
   userId       String
@@ -52,4 +54,23 @@ model Match {
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Enquiry {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  message   String
+  createdAt DateTime @default(now())
 }
